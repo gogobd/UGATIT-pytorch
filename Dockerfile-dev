@@ -1,0 +1,50 @@
+FROM debian:bookworm-slim
+# FROM --platform=linux/amd64 debian:bookworm-slim
+
+# Install system dependencies
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    curl \
+    wget \
+    git \
+    screen \
+    unzip \
+    vim \
+    procps \
+    locales \
+    python3-pip \
+ && apt-get clean
+
+# Code server
+# https://github.com/coder/code-server/releases
+ARG VERSION=4.19.0
+# linux-amd64, linux-arm64, linux-armv7l, macos-amd64
+ARG PLATFORM=linux-amd64
+RUN mkdir -p ~/.local/lib ~/.local/bin
+RUN curl -sfL https://github.com/cdr/code-server/releases/download/v$VERSION/code-server-$VERSION-$PLATFORM.tar.gz | tar -C ~/.local/lib -xz
+RUN mv ~/.local/lib/code-server-$VERSION-$PLATFORM ~/.local/lib/code-server-$VERSION
+RUN ln -s ~/.local/lib/code-server-$VERSION/bin/code-server /usr/local/bin/code-server
+
+# Miniconda
+RUN if [ "$PLATFORM" = "linux-arm64" ]; then \
+        curl -sL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh -o miniconda.sh; \
+    elif [ "$PLATFORM" = "linux-amd64" ]; then \
+        curl -sL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh; \
+    else \
+        echo "Unsupported platform: $PLATFORM"; \
+        exit 1; \
+    fi
+RUN bash miniconda.sh -b -p ~/.local/miniconda
+RUN ln -s ~/.local/miniconda/bin/conda /usr/local/bin/conda
+RUN conda init
+
+WORKDIR /app
+ENV SHELL /bin/bash
+CMD /usr/local/bin/code-server --cert --bind-addr 0.0.0.0:8080 /app
+
+# docker run --rm --privileged aptman/qus -s -- -p
+
+# docker build -t codeserver-ugatit -f Dockerfile-dev .
+# docker run --name codeserver-ugatit --privileged --ipc host --gpus all -v /Volumes/remote/nasberrypi05.precalc.org/Public/Shared\ Data/deeplearning:/app/data -v $(pwd):/app -p 8380-8389:8080-8089 -it -d codeserver-ugatit
+# docker exec -it codeserver-ugatit cat /root/.config/code-server/config.yaml
+
