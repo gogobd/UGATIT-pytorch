@@ -24,6 +24,8 @@ class UGATIT(object) :
         self.batch_size = args.batch_size
         self.print_freq = args.print_freq
         self.save_freq = args.save_freq
+        self.train_sample_num = args.train_sample_num
+        self.test_sample_num = args.test_sample_num
 
         self.lr = args.lr
         self.weight_decay = args.weight_decay
@@ -243,13 +245,11 @@ class UGATIT(object) :
 
             print("[%5d/%5d] time: %4.4f d_loss: %.8f, g_loss: %.8f" % (step, self.iteration, time.time() - start_time, Discriminator_loss, Generator_loss))
             if step % self.print_freq == 0:
-                train_sample_num = 5
-                test_sample_num = 5
                 A2B = np.zeros((self.img_size * 7, 0, 3))
                 B2A = np.zeros((self.img_size * 7, 0, 3))
 
                 self.genA2B.eval(), self.genB2A.eval(), self.disGA.eval(), self.disGB.eval(), self.disLA.eval(), self.disLB.eval()
-                for _ in range(train_sample_num):
+                for _ in range(self.train_sample_num):
                     try:
                         real_A, _ = next(trainA_iter)
                     except:
@@ -288,7 +288,7 @@ class UGATIT(object) :
                                                                cam(tensor2numpy(fake_B2A2B_heatmap[0]), self.img_size),
                                                                RGB2BGR(tensor2numpy(denorm(fake_B2A2B[0])))), 0)), 1)
 
-                for _ in range(test_sample_num):
+                for _ in range(self.test_sample_num):
                     try:
                         real_A, _ = next(testA_iter)
                     except:
